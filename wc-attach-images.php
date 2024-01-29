@@ -91,12 +91,12 @@ function wc_attach_images_process_products($page = 1)
         'post_type'      => 'product',
         'posts_per_page' => 100,
         'paged'          => $page,
-        'meta_query'     => array(
-            array(
-                'key'     => '_thumbnail_id',
-                'compare' => 'NOT EXISTS',
-            ),
-        ),
+        // 'meta_query'     => array(
+        //     array(
+        //         'key'     => '_thumbnail_id',
+        //         'compare' => 'NOT EXISTS',
+        //     ),
+        // ),
     );
 
     $products = new WP_Query($args);
@@ -119,14 +119,25 @@ function wc_attach_images_process_products($page = 1)
 
             $product_object = wc_get_product($product_id);
 
-            $product_sku = $product_object->get_sku();
+            $product_sku = html_entity_decode(trim($product_object->get_sku()));
+
+            // if no sku, or sku is empty, skip product
+            if (!$product_sku) :
+                // log product has no sku message
+                wc_attach_images_log('Product has no SKU, skipping product: ' . $product_id);
+                continue;
+            endif;
 
             // log retrieving product sku message
             wc_attach_images_log('Retrieving product SKU for product: ' . $product_sku);
 
-            $last_dash_pos = strrpos($product_sku, '-');
+            // $last_dash_pos = strrpos($product_sku, '-');
 
-            $search_term = str_replace('-', ' ', substr($product_sku, 0, $last_dash_pos));
+            // $search_term = str_replace('-', ' ', substr($product_sku, 0, $last_dash_pos));
+            $search_term = str_replace(['-', '/', '\\', '_', ',', '.'], ' ', $product_sku);
+
+            // remove any integers from the end of the search term IF there is a space before the integer
+            $search_term = preg_replace('/\s\d+$/', '', $search_term);
 
             // log searching media library message
             wc_attach_images_log('Searching media library for following keyword: ' . $search_term);
@@ -191,8 +202,14 @@ function wc_attach_images_process_products($page = 1)
             // if counter reaches 100, rest, increment page and process next batch of products
             if ($i == 100) :
 
+                // log rest message
+                wc_attach_images_log('RESTING...');
+
                 // Rest between batches
                 sleep(5);
+
+                // log rest complete message
+                wc_attach_images_log('REST COMPLETE, MOVING TO NEXT BATCH...');
 
                 // Increment page
                 $page++;
