@@ -1,4 +1,4 @@
-# WooCommerce Bulk Attache Product Images
+# WooCommerce Bulk Attach Product Images
 
 A simple WooCommerce plugin to bulk attach main product images to products and their children via Action Scheduler.
 
